@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Адмін-панель 3DPrintCraftUA</title>
+    <style>
+        body { background: #0a0a0a; color: #eee; font-family: 'Segoe UI', sans-serif; padding: 30px; }
+        h1 { color: #ff9500; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .order-container { max-width: 900px; margin: 0 auto; }
+        
+        .order-card { 
+            background: #151515; 
+            border-left: 5px solid #ff9500; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .order-info b { color: #ff9500; font-size: 18px; }
+        .order-info p { margin: 5px 0; color: #bbb; }
+        
+        .status-selector {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Кольори для різних статусів, щоб було зручніше бачити */
+        .status-selector option { background: #111; }
+        
+        .delete-btn {
+            background: #cc0000;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Керування замовленнями 🛠️</h1>
+    <div class="order-container" id="orders-list">Завантаження замовлень...</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAban86otzMqDuk_XwnqADDNPHICU9tFFs",
+            authDomain: "d-shop-status.firebaseapp.com",
+            projectId: "d-shop-status",
+            databaseURL: "https://d-shop-status-default-rtdb.europe-west1.firebasedatabase.app/",
+            appId: "1:286708501499:web:eb82c5cf7f7f92746ed95e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Функція для відображення замовлень
+        db.ref('orders').on('value', (snapshot) => {
+            const orders = snapshot.val();
+            const container = document.getElementById('orders-list');
+            container.innerHTML = '';
+
+            if (!orders) {
+                container.innerHTML = "<h3>Замовлень поки немає 🤷‍♂️</h3>";
+                return;
+            }
+
+            for (let phone in orders) {
+                const order = orders[phone];
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                
+                card.innerHTML = `
+                    <div class="order-info">
+                        <b>📞 ${phone}</b> — ${order.item}<br>
+                        <p>👤 Клієнт: ${order.customer || 'Не вказано'}</p>
+                        <p>📅 ${order.time}</p>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <select class="status-selector" onchange="updateStatus('${phone}', this.value)">
+                            <option value="" ${order.status === '' ? 'selected' : ''}>— Порожньо —</option>
+                            <option value="⏳ В черзі" ${order.status === '⏳ В черзі' ? 'selected' : ''}>⏳ В черзі</option>
+                            <option value="⚙️ Друкується" ${order.status === '⚙️ Друкується' ? 'selected' : ''}>⚙️ Друкується</option>
+                            <option value="📦 Упаковка" ${order.status === '📦 Упаковка' ? 'selected' : ''}>📦 Упаковка</option>
+                            <option value="🚚 Відправка" ${order.status === '🚚 Відправка' ? 'selected' : ''}>🚚 Відправка</option>
+                            <option value="🛣️ У дорозі" ${order.status === '🛣️ У дорозі' ? 'selected' : ''}>🛣️ У дорозі</option>
+                            <option value="🏢 На складі" ${order.status === '🏢 На складі' ? 'selected' : ''}>🏢 На складі</option>
+                            <option value="📫 На пошті (Готово)" ${order.status === '📫 На пошті (Готово)' ? 'selected' : ''}>📫 На пошті</option>
+                        </select>
+                        <button class="delete-btn" onclick="deleteOrder('${phone}')">Видалити</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+        });
+
+        // Оновлення статусу
+        function updateStatus(phone, newStatus) {
+            db.ref('orders/' + phone).update({ status: newStatus })
+                .then(() => console.log("Статус оновлено для " + phone));
+        }
+
+        // Видалення замовлення (якщо замовлення вже старе)
+        function deleteOrder(phone) {
+            if (confirm("Видалити замовлення клієнта " + phone + "?")) {
+                db.ref('orders/' + phone).remove();
+            }
+        }
+    </script>
+</body>
+</html>
