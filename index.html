@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 3D-PrintCraft | Генератор моделей</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <aside id="sidebar">
+            <h2>🤖 AI 3D-Generator</h2>
+            <p class="subtitle">Напиши описовий промпт для створення 3D-моделі</p>
+            
+            <div class="control-group">
+                <label for="prompt-input">Що хочеш надрукувати?</label>
+                <textarea id="prompt-input" placeholder="Наприклад: Деталізований тримач для інструментів, фігурка Майнкрафт..."></textarea>
+            </div>
+
+            <div class="control-group">
+                <label for="printer-select">Твій 3D-принтер:</label>
+                <select id="printer-select">
+                    <option value="single-color">Звичайний (Одноколірний, 220x220)</option>
+                    <option value="multi-color">Багатоколірний / AMS (Компактний, 180x180)</option>
+                    <option value="large">Великоформатний (300x300)</option>
+                </select>
+            </div>
+
+            <button id="btn-generate" class="btn-primary">✨ Згенерувати 3D-модель</button>
+            
+            <hr class="divider">
+
+            <h3>💾 Експорт для друку</h3>
+            <div class="export-buttons">
+                <button id="btn-export-stl" class="btn-secondary">📦 Скачати .STL (Моно)</button>
+                <button id="btn-export-color" class="btn-secondary color-btn">🎨 Скачати кольоровий (.3MF/.OBJ)</button>
+            </div>
+            
+            <div id="status-bar" class="status-ready">🟢 Готовий до роботи</div>
+        </aside>
+
+        <main id="viewer-container">
+            <div id="canvas-3d"></div>
+            <div class="viewer-overlay">ЛКМ — крутити | ПКМ — рухати | Скрол — зум</div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
