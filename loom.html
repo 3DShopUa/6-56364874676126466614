@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Браслет на станку</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede4;--panel:#fff;--ink:#1d2b30;--mute:#5d6e74;--line:#d3ccbb;--acc:#1f8a70;--cv:#faf8f3;--accink:#fff;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12191c;--panel:#1b2529;--ink:#e6eef0;--mute:#8fa2a8;--line:#35454b;--acc:#3fc3a2;--cv:#151e21;--accink:#12191c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12191c;--panel:#1b2529;--ink:#e6eef0;--mute:#8fa2a8;--line:#35454b;--acc:#3fc3a2;--cv:#151e21;--accink:#12191c;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,sans-serif;display:flex;flex-direction:column;height:100dvh;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#app{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;padding:0 env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
+#isl{position:relative;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
+#islbar{display:flex;gap:6px;align-items:center;padding:8px;overflow-x:auto;background:var(--panel);position:sticky;top:0;z-index:2}
+#islbar .sp{flex:1}
+#islbody{display:none;position:absolute;top:100%;left:0;right:0;max-height:72dvh;overflow:auto;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:0 14px 26px rgba(0,0,0,.28);padding:12px 12px 18px}
+#isl.open #islbody{display:block}
+#stage{flex:1;min-height:0;padding:8px}
+#wrap{height:100%;overflow:auto;background:var(--cv);border:1px solid var(--line);border-radius:12px;padding:6px}
+@media(orientation:landscape){
+ #app{flex-direction:row}
+ #isl{width:clamp(250px,34vw,320px);border-bottom:0;border-right:1px solid var(--line);overflow:auto}
+ #islbtn{display:none}
+ #islbody{display:block;position:static;max-height:none;overflow:visible;box-shadow:none;border:0}
+ #islbar{flex-wrap:wrap;overflow:visible}
+}
+h1{font:500 17px Unbounded,system-ui,sans-serif;margin:0 0 10px}
+h2{font:600 12px Manrope,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:16px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.row label{font-size:13px;color:var(--mute);display:flex;gap:6px;align-items:center}
+.note{font-size:13px;color:var(--mute);margin:4px 0}
+input[type=number],select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--cv);color:var(--ink);font:inherit;font-size:14px}
+input[type=number]{width:74px}
+button{font:inherit;font-size:14px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--cv);color:var(--ink);cursor:pointer;white-space:nowrap}
+#islbar button{padding:8px 10px;font-size:13px}
+button.on,button.go{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#chip{width:42px;height:38px;border-radius:9px;border:2px solid var(--ink);flex:none;padding:0;font:700 15px Manrope,sans-serif}
+#pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;margin-bottom:10px}
+.sw{height:46px;border-radius:10px;border:2px solid var(--line);padding:0;font:700 16px Manrope,sans-serif}
+.sw.on{border-color:var(--ink);box-shadow:0 0 0 3px var(--acc)}
+#sel{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--cv);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
+#selsw{width:34px;height:34px;border-radius:8px;border:1px solid rgba(0,0,0,.4)}
+#dupw{color:#c0392b;font-size:13px;margin:0 0 8px}
+input[type=color]{width:46px;height:36px;padding:0;border:1px solid var(--line);border-radius:8px;background:none}
+canvas{display:block;margin:auto}canvas.paint{touch-action:none;cursor:crosshair}
+#leg div{display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0}
+#leg i{min-width:26px;height:22px;border-radius:6px;border:1px solid rgba(0,0,0,.5);display:grid;place-items:center;font:700 12px Manrope,sans-serif;font-style:normal}
+#out img,#pvimg{max-width:100%;width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+</style></head><body>
+<div id="app">
+<aside id="isl">
+ <div id="islbar">
+  <button id="chip" aria-label="Поточний колір"></button>
+  <button id="tdraw" class="on">Малюв.</button><button id="terase">Гумка</button><button id="tfill">Заливка</button><button id="tpan">Рух</button>
+  <span class="sp"></span><button id="undo">Скасувати</button><button id="islbtn" aria-expanded="false">Меню ▾</button>
+ </div>
+ <div id="islbody">
+  <h1>Браслет на станку</h1>
+  <h2 style="margin-top:0">Кольори</h2>
+  <div id="pal"></div>
+  <div id="sel"><span id="selsw"></span><label style="font-size:14px;display:flex;gap:6px;align-items:center">Номер цього кольору <input id="seln" type="number" min="1" max="99"></label><button id="renum">Нумерувати по порядку</button></div>
+  <p id="dupw" hidden>У двох кольорів однаковий номер, це може заплутати.</p>
+  <div class="row"><input id="newc" type="color" value="#e63946" aria-label="Свій колір"><button id="addc">Додати колір</button><button id="edpal">Видаляти кольори</button></div>
+  <p class="note" id="edhint" hidden>Торкніться кольору, щоб видалити його зі списку. Намальоване лишиться.</p>
+  <button id="respal">Стандартні кольори</button>
+  <h2>Інструменти</h2>
+  <div class="row"><button id="mirror">Дзеркало</button><button id="nums">Номери</button><button id="clear">Очистити поле</button></div>
+  <h2>Полотно</h2>
+  <div class="row"><label>Ширина <input id="cols" type="number" min="3" max="40"></label><label>Рядків <input id="rows" type="number" min="3" max="300"></label></div>
+  <div class="row"><label>Бісеринка, мм <input id="size" type="number" min="1" max="6" step="0.1"></label></div>
+  <div class="row"><label>Довжина, см <input id="lencm" type="number" min="1" max="60" step="0.5"></label><button id="lenbtn">Підібрати рядки</button></div>
+  <div class="row"><label>Нумерація рядків <select id="start"><option value="top">Зверху</option><option value="bottom">Знизу</option></select></label></div>
+  <p class="note" id="info"></p>
+  <h2>Кількість бісеру</h2><div id="leg"></div>
+  <h2>Фото схеми</h2>
+  <p class="note">Оновлюється під час малювання: збоку номер ряду, на бісеринках номер кольору.</p>
+  <img id="pvimg" alt="Фото схеми"><div style="margin-top:10px"><button id="png" class="go">Завантажити фото</button></div>
+  <div id="out" style="margin-top:10px" hidden></div>
+ </div>
+</aside>
+<section id="stage"><div id="wrap"><canvas id="cv" aria-label="Схема браслета"></canvas></div></section>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)},cv=$('cv'),ctx=cv.getContext('2d'),CW=30,CH=24,M=42,T=8,RM=40;
+var DEF=['#1d3557','#e63946','#f1faee','#a8dadc','#457b9d','#ffb703','#2a9d8f','#111111','#f4a261','#9b5de5'];
+function defPal(){return DEF.map(function(c,i){return{c:c,n:i+1}})}
+var S={cols:9,rows:60,cells:[],pal:defPal(),cur:DEF[0],size:2.3,start:'top',mirror:false,nums:true};
+var tool='draw',editing=false,hist=[],down=false;
+try{var o=JSON.parse(localStorage.getItem('loom-s'));if(o&&o.cells&&o.pal)S=Object.assign(S,o)}catch(e){}
+S.pal=S.pal.map(function(p,i){return typeof p==='string'?{c:p,n:i+1}:p});
+if(!S.v){S.nums=true;S.v=2}
+if(!S.pal.some(function(p){return p.c===S.cur}))S.cur=S.pal.length?S.pal[0].c:null;
+if(S.cells.length!==S.cols*S.rows)S.cells=new Array(S.cols*S.rows).fill(null);
+function save(){try{localStorage.setItem('loom-s',JSON.stringify(S))}catch(e){}}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n)}
+function rgb(h){return[parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]}
+function lum(p){return .299*p[0]+.587*p[1]+.114*p[2]}
+function txtc(h){return lum(rgb(h))>150?'#111':'#fff'}
+function curE(){return S.pal.filter(function(p){return p.c===S.cur})[0]}
+function resize(c,r){var n=[],x,y;for(y=0;y<r;y++)for(x=0;x<c;x++)n.push(x<S.cols&&y<S.rows?S.cells[y*S.cols+x]:null);S.cols=c;S.rows=r;S.cells=n}
+function numbers(){
+ var n={},cnt={};S.cells.forEach(function(h){if(h)cnt[h]=(cnt[h]||0)+1});
+ S.pal.forEach(function(p){if(cnt[p.c])n[p.c]=p.n});
+ var ex=Math.max(0,Math.max.apply(null,S.pal.map(function(p){return p.n})))+1;
+ Object.keys(cnt).forEach(function(h){if(!(h in n))n[h]=ex++});
+ return{n:n,cnt:cnt,list:Object.keys(cnt).sort(function(a,b){return n[a]-n[b]})};
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function paintScheme(c,light){
+ var N=numbers(),mute=light?'#5d6e74':css('--mute'),line=light?'#c3d0d5':css('--line'),x,y;
+ for(y=0;y<S.rows;y++){
+  var rn=S.start==='top'?y+1:S.rows-y;c.fillStyle=mute;c.font=(rn%5===0?'700 12px':'12px')+' Manrope,system-ui,sans-serif';c.textBaseline='middle';
+  c.textAlign='right';c.fillText(rn,M-8,T+y*CH+CH/2);c.textAlign='left';c.fillText(rn,M+S.cols*CW+8,T+y*CH+CH/2);
+  for(x=0;x<S.cols;x++){var h=S.cells[y*S.cols+x],px=M+x*CW+1,py=T+y*CH+1;rr(c,px,py,CW-2,CH-2,6);
+   if(h){c.fillStyle=h;c.fill();c.lineWidth=1;c.strokeStyle='rgba(0,0,0,.4)';c.stroke();
+    if(S.nums||light){c.fillStyle=txtc(h);c.font='700 12px Manrope,system-ui,sans-serif';c.textAlign='center';c.fillText(N.n[h],px+(CW-2)/2,py+(CH-2)/2+1)}}
+   else{c.lineWidth=1;c.strokeStyle=line;c.stroke()}}}
+}
+function draw(){
+ var w=M+S.cols*CW+RM,h=S.rows*CH+T*2,d=Math.min(window.devicePixelRatio||1,Math.sqrt(1.6e7/(w*h)));
+ cv.width=w*d;cv.height=h*d;cv.style.width=w+'px';cv.style.height=h+'px';ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);
+ paintScheme(ctx,false);side();preview();
+}
+function side(){
+ var N=numbers(),tot=0,h='';
+ N.list.forEach(function(c){tot+=N.cnt[c];h+='<div><i style="background:'+c+';color:'+txtc(c)+'">'+N.n[c]+'</i> '+N.cnt[c]+' шт.</div>'});
+ $('leg').innerHTML=(h||'<div class="note">Поки порожньо.</div>')+'<div style="margin-top:4px"><b>Разом: '+tot+' з '+S.cols*S.rows+'</b></div>';
+ $('info').textContent='Орієнтовно '+(S.cols*S.size/10).toFixed(1)+' × '+(S.rows*S.size/10).toFixed(1)+' см. Ниток основи: '+(S.cols+1)+'.';
+ $('lencm').value=(S.rows*S.size/10).toFixed(1);
+}
+function pal(){
+ var p=$('pal');p.innerHTML='';
+ S.pal.forEach(function(e){var b=document.createElement('button');
+  b.className='sw'+(tool!=='erase'&&!editing&&e.c===S.cur?' on':'');b.style.background=e.c;b.style.color=txtc(e.c);
+  b.textContent=editing?'✕':e.n;b.setAttribute('aria-label',(editing?'Видалити колір №':'Колір №')+e.n);
+  b.onclick=function(){
+   if(editing){S.pal=S.pal.filter(function(x){return x!==e});if(S.cur===e.c)S.cur=S.pal.length?S.pal[0].c:null}
+   else{S.cur=e.c;if(tool==='erase'||tool==='pan')tool='draw'}
+   ui();save();draw()};
+  p.appendChild(b)});
+ if(!S.pal.length)p.innerHTML='<span class="note">Палітра порожня. Додайте колір.</span>';
+ var e=curE();$('sel').style.display=e?'flex':'none';
+ if(e){$('selsw').style.background=e.c;$('seln').value=e.n}
+ var ch=$('chip');ch.style.background=e?e.c:'transparent';ch.style.color=e?txtc(e.c):'var(--mute)';ch.textContent=e?e.n:'?';ch.style.opacity=tool==='erase'?.4:1;
+ var seen={},dup=false;S.pal.forEach(function(x){if(seen[x.n])dup=true;seen[x.n]=1});$('dupw').hidden=!dup;
+}
+function ui(){
+ pal();['draw','erase','fill','pan'].forEach(function(t){$('t'+t).className=tool===t?'on':''});
+ $('edpal').className=editing?'on':'';$('edpal').textContent=editing?'Готово':'Видаляти кольори';$('edhint').hidden=!editing;
+ $('mirror').className=S.mirror?'on':'';$('nums').className=S.nums?'on':'';
+ $('cols').value=S.cols;$('rows').value=S.rows;$('size').value=S.size;$('start').value=S.start;
+ cv.className=tool==='pan'?'':'paint';
+}
+function at(e){var r=cv.getBoundingClientRect(),x=Math.floor((e.clientX-r.left-M)/CW),y=Math.floor((e.clientY-r.top-T)/CH);return(x<0||y<0||x>=S.cols||y>=S.rows)?null:[x,y]}
+function put(x,y,v){S.cells[y*S.cols+x]=v}
+function paint(e){var a=at(e);if(!a)return;var v=tool==='erase'?null:S.cur;if(tool==='draw'&&!v)return;put(a[0],a[1],v);if(S.mirror)put(S.cols-1-a[0],a[1],v);draw()}
+function flood(x,y){var t=S.cells[y*S.cols+x],v=S.cur;if(!v||t===v)return;var st=[[x,y]],W=S.cols;
+ while(st.length){var p=st.pop(),i=p[1]*W+p[0];if(S.cells[i]!==t)continue;S.cells[i]=v;
+  if(p[0]>0)st.push([p[0]-1,p[1]]);if(p[0]<W-1)st.push([p[0]+1,p[1]]);if(p[1]>0)st.push([p[0],p[1]-1]);if(p[1]<S.rows-1)st.push([p[0],p[1]+1])}}
+function push(){hist.push(S.cells.slice());if(hist.length>40)hist.shift()}
+cv.addEventListener('pointerdown',function(e){if(tool==='pan')return;var a=at(e);if(!a)return;push();
+ if(tool==='fill'){flood(a[0],a[1]);draw();save();return}
+ down=true;cv.setPointerCapture(e.pointerId);paint(e)});
+cv.addEventListener('pointermove',function(e){if(down)paint(e)});
+['pointerup','pointercancel'].forEach(function(n){cv.addEventListener(n,function(){if(down){down=false;save()}})});
+$('undo').onclick=function(){if(hist.length){S.cells=hist.pop();save();draw()}};
+$('clear').onclick=function(){push();S.cells=new Array(S.cols*S.rows).fill(null);save();draw()};
+['draw','erase','fill','pan'].forEach(function(t){$('t'+t).onclick=function(){tool=t;ui()}});
+$('chip').onclick=function(){$('isl').classList.add('open');$('islbtn').setAttribute('aria-expanded','true')};
+$('islbtn').onclick=function(){var o=$('isl').classList.toggle('open');this.setAttribute('aria-expanded',o);this.textContent=o?'Згорнути ▴':'Меню ▾'};
+$('mirror').onclick=function(){S.mirror=!S.mirror;save();ui()};$('nums').onclick=function(){S.nums=!S.nums;save();ui();draw()};
+$('edpal').onclick=function(){editing=!editing;ui()};
+$('addc').onclick=function(){var c=$('newc').value;if(!S.pal.some(function(p){return p.c===c})){var n=Math.max(0,Math.max.apply(null,S.pal.map(function(p){return p.n})))+1;S.pal.push({c:c,n:n})}
+ S.cur=c;tool='draw';editing=false;ui();save();draw()};
+$('respal').onclick=function(){S.pal=defPal();S.cur=S.pal[0].c;editing=false;ui();save();draw()};
+$('seln').onchange=function(){var e=curE();if(e){e.n=Math.max(1,Math.min(99,Math.round(+this.value)||1));save();ui();draw()}};
+$('renum').onclick=function(){S.pal.forEach(function(p,i){p.n=i+1});save();ui();draw()};
+function dims(){var c=Math.max(3,Math.min(40,+$('cols').value||9)),r=Math.max(3,Math.min(300,+$('rows').value||60));push();resize(c,r);ui();save();draw()}
+$('cols').onchange=dims;$('rows').onchange=dims;
+$('size').onchange=function(){S.size=Math.max(1,Math.min(6,+this.value||2.3));save();draw()};
+$('lenbtn').onclick=function(){var cm=+$('lencm').value;if(cm>0){$('rows').value=Math.max(3,Math.min(300,Math.round(cm*10/S.size)));dims()}};
+$('start').onchange=function(){S.start=this.value;save();draw()};
+async function saveBlob(name,blob,fb){var d=null;try{d=window.claude?await claude.use('downloads'):null}catch(e){}
+ if(d){d.save({filename:name,data:blob}).catch(function(){})}else fb()}
+function sheet(k){
+ var N=numbers(),tot=0;N.list.forEach(function(c){tot+=N.cnt[c]});
+ var sw=M+S.cols*CW+RM+10,W=Math.max(sw,360),per=Math.max(1,Math.floor((W-20)/130)),legH=Math.ceil(N.list.length/per)*30,ph=S.rows*CH+T*2,H=56+ph+20+legH+44;
+ var e=document.createElement('canvas');e.width=W*k;e.height=H*k;var c=e.getContext('2d');c.scale(k,k);
+ c.fillStyle='#fff';c.fillRect(0,0,W,H);c.fillStyle='#1d2b30';c.textAlign='left';c.textBaseline='alphabetic';
+ c.font='700 17px Manrope,system-ui,sans-serif';c.fillText('Браслет на станку: '+S.cols+' × '+S.rows+', '+tot+' бісеринок',16,26);
+ c.fillStyle='#5d6e74';c.font='12px Manrope,system-ui,sans-serif';c.fillText('Орієнтовно '+(S.cols*S.size/10).toFixed(1)+' × '+(S.rows*S.size/10).toFixed(1)+' см, ниток основи '+(S.cols+1)+'. Нумерація рядків: '+(S.start==='top'?'зверху':'знизу'),16,44);
+ c.save();c.translate(0,56);paintScheme(c,true);c.restore();
+ N.list.forEach(function(h,i){var x=16+(i%per)*130,y=56+ph+20+Math.floor(i/per)*30;rr(c,x,y,26,22,6);c.fillStyle=h;c.fill();c.strokeStyle='rgba(0,0,0,.4)';c.stroke();
+  c.fillStyle=txtc(h);c.font='700 12px Manrope,system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(N.n[h],x+13,y+12);
+  c.fillStyle='#1d2b30';c.textAlign='left';c.font='13px Manrope,system-ui,sans-serif';c.fillText('× '+N.cnt[h],x+34,y+12)});
+ c.fillStyle='#5d6e74';c.textBaseline='alphabetic';c.font='12px Manrope,system-ui,sans-serif';c.fillText('Номер збоку — номер рядка. У клітинках — номер кольору.',16,H-16);
+ return e}
+$('png').onclick=function(){var e=sheet(S.rows>150?1:2);e.toBlob(function(b){saveBlob('bracelet-scheme.png',b,function(){
+ var o=$('out');o.hidden=false;o.innerHTML='<img alt="Схема" src="'+e.toDataURL('image/png')+'"><p class="note">Затисніть зображення (або права кнопка миші), щоб зберегти.</p>'})},'image/png')};
+var pvT=0;function preview(){clearTimeout(pvT);pvT=setTimeout(function(){try{$('pvimg').src=sheet(1).toDataURL('image/png')}catch(e){}},350)}
+ui();draw();
+</script></body></html>
